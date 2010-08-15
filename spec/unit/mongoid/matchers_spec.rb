@@ -34,6 +34,82 @@ describe Mongoid::Matchers do
 
       end
 
+      context "with fields of type hash" do
+
+        before do
+          @document = Foo.new(:translated_name => { "de" => "FooDe", "en" => "FooEn" })
+        end
+
+        context "when the attributes match" do
+
+          before do
+            @selector = { :translated_name => { "de" => "FooDe", "en" => "FooEn" } }
+          end
+
+          it "does not raise" do
+            lambda { @document.matches?(@selector) }.should_not raise_error
+          end
+
+          it "returns true" do
+            @document.matches?(@selector).should be_true
+          end
+
+        end
+
+        context "when attributes do not match" do
+
+          before do
+            @selector = { :translated_name => { "fr" => "FooFr", "en" => "FooEn" } }
+          end
+
+          it "returns false" do
+            @document.matches?(@selector).should be_false
+          end
+
+        end
+
+        context "selector steps into hash" do
+
+          context "when attribute key and value match" do
+
+            before do
+              @selector = { "translated_name.en" => "FooEn"  }
+            end
+
+            it "returns true" do
+              @document.matches?(@selector).should be_true
+            end
+
+          end
+
+          context "when attribute key does not match" do
+
+            before do
+              @selector = { "translated_name.fr" => "FooEn"  }
+            end
+
+            it "returns false" do
+              @document.matches?(@selector).should be_false
+            end
+
+          end
+
+          context "when attribute key does match but value does not match" do
+
+            before do
+              @selector = { "translated_name.en" => "FooFr" }
+            end
+
+            it "returns false" do
+              @document.matches?(@selector).should be_false
+            end
+
+          end
+
+        end
+
+      end
+
     end
 
     context "when performing complex matching" do

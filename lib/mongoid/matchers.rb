@@ -25,11 +25,18 @@ module Mongoid #:nodoc:
     # Get the matcher for the supplied key and value. Will determine the class
     # name from the key.
     def matcher(key, value)
-      if value.is_a?(Hash)
-        name = "Mongoid::Matchers::#{value.keys.first.gsub("$", "").camelize}"
-        return name.constantize.new(attributes[key])
+      if value.is_a?(Hash) && /^\$(.+)/ =~ value.keys.first
+        name = "Mongoid::Matchers::#{$1.camelize}"
+        return name.constantize.new(expand_attribute(key))
       end
-      Default.new(attributes[key])
+      Default.new(expand_attribute(key))
+    end
+    # Expand the attribute for given (period seperated) key. This is needed for (embedded)
+    # documents with fields of type type Hash, and selector keys are trying to step into the hash.
+    def expand_attribute(key)
+      keys = key.to_s.split('.')
+      attribute = attributes[keys[0]]
+      attribute = keys[1..-1].inject(attribute) { |a, k| a = a ? a[k] : nil }
     end
   end
 end
